@@ -53,6 +53,8 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   final _databaseHelper = db_helper.getDatabaseHelper();
   bool _showingFavorites = false;
   late AnimationController _grassAnimationController;
+  late AnimationController _breathingController;
+  late Animation<double> _breathingAnimation;
 
   @override
   void initState() {
@@ -70,6 +72,22 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat();
+    
+    _breathingController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    )..repeat(reverse: true);
+    
+    _breathingAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
+    );
+  }
+
+  void _toggleShowFavorites() {
+    setState(() {
+      _showingFavorites = !_showingFavorites;
+    });
+    _loadTruths();
   }
 
   Future<void> _loadTruths() async {
@@ -80,6 +98,16 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       truths = loadedTruths;
       _currentTruthIndex = 0;
     });
+    _controller.forward(from: 0.0);
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (truths.isNotEmpty) {
+      await _databaseHelper.toggleFavorite(truths[_currentTruthIndex]['id']);
+      setState(() {
+        truths[_currentTruthIndex]['isFavorite'] = truths[_currentTruthIndex]['isFavorite'] == 1 ? 0 : 1;
+      });
+    }
   }
 
   void _changeTruth() {
@@ -90,20 +118,6 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       });
       _controller.forward();
     });
-  }
-
-  Future<void> _toggleFavorite() async {
-    if (truths.isNotEmpty) {
-      await _databaseHelper.toggleFavorite(truths[_currentTruthIndex]['id']);
-      _loadTruths();
-    }
-  }
-
-  void _toggleShowFavorites() {
-    setState(() {
-      _showingFavorites = !_showingFavorites;
-    });
-    _loadTruths();
   }
 
   Future<void> _addNewTruth() async {
@@ -187,7 +201,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       ),
       body: Stack(
         children: [
-          GrassBackground(animation: _grassAnimationController),
+          BreathingBackground(animation: _breathingAnimation),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -247,6 +261,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   void dispose() {
     _controller.dispose();
     _grassAnimationController.dispose();
+    _breathingController.dispose();
     super.dispose();
   }
 }
@@ -302,11 +317,7 @@ class GrassPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.green[700]!
-      ..style = PaintingStyle.fill;
-
-    final darkPaint = Paint()
-      ..color = Colors.green[900]!
+      ..color = Colors.green[600]!
       ..style = PaintingStyle.fill;
 
     final skyPaint = Paint()
@@ -316,25 +327,52 @@ class GrassPainter extends CustomPainter {
     // Draw sky (full screen)
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), skyPaint);
 
-    // Draw grass blades (bottom third of the screen)
-    for (int i = 0; i < size.width; i += 10) {
+    // Draw grass blades (bottom half of the screen)
+    for (int i = 0; i < size.width; i += 20) {
       final path = Path();
       path.moveTo(i.toDouble(), size.height);
       
-      final waveOffset = math.sin((animationValue * 2 * math.pi) + (i / size.width) * 4 * math.pi) * 5;
-      final height = size.height * 0.1 + waveOffset; // Reduced grass height
+      final waveOffset = math.sin((animationValue * 2 * math.pi) + (i / size.width) * 2 * math.pi) * 20;
+      final height = size.height * 0.5 + waveOffset; // Increased grass height
       
       path.quadraticBezierTo(
-        i.toDouble() + 5, 
-        size.height - height, 
         i.toDouble() + 10, 
+        size.height - height, 
+        i.toDouble() + 20, 
         size.height
       );
 
-      canvas.drawPath(path, i % 20 == 0 ? darkPaint : paint);
+      canvas.drawPath(path, paint);
     }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class BreathingBackground extends StatelessWidget {
+  final Animation<double> animation;
+
+  const BreathingBackground({Key? key, required this.animation}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.center,
+              radius: 0.8 * animation.value,
+              colors: [
+                Theme.of(context).colorScheme.surface.withOpacity(0.6),
+                Theme.of(context).colorScheme.background.withOpacity(0.9),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
