@@ -253,7 +253,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                     padding: const EdgeInsets.all(16.0),
                     child: ElevatedButton(
                       onPressed: _changeTruth,
-                      child: const Text('Next Fact', style: TextStyle(fontSize: 20)),
+                      child: const Text('Next', style: TextStyle(fontSize: 20)),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(200, 60),
                         backgroundColor: Theme.of(context).colorScheme.primary,
