@@ -103,9 +103,23 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
 
   Future<void> _toggleFavorite() async {
     if (truths.isNotEmpty) {
-      await _databaseHelper.toggleFavorite(truths[_currentTruthIndex]['id']);
+      int currentId = truths[_currentTruthIndex]['id'];
+      await _databaseHelper.toggleFavorite(currentId);
+      
+      // Reload the truths to get the updated favorite status
+      List<Map<String, dynamic>> updatedTruths = _showingFavorites
+          ? await _databaseHelper.getFavoriteTruths()
+          : await _databaseHelper.getTruths();
+      
       setState(() {
-        truths[_currentTruthIndex]['isFavorite'] = truths[_currentTruthIndex]['isFavorite'] == 1 ? 0 : 1;
+        truths = updatedTruths;
+        // Find the index of the current truth in the updated list
+        _currentTruthIndex = truths.indexWhere((truth) => truth['id'] == currentId);
+        if (_currentTruthIndex == -1) {
+          // If the current truth is not in the updated list (e.g., when toggling off a favorite in favorites view),
+          // set the index to 0 or keep it at the last valid index
+          _currentTruthIndex = truths.isEmpty ? 0 : truths.length - 1;
+        }
       });
     }
   }
@@ -162,13 +176,12 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
         elevation: 0,
         centerTitle: false,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Icon(
-              Icons.spa_outlined,
-              color: Theme.of(context).colorScheme.primary,
-              size: 30,
+            Image.asset(
+              'assets/certainty_logo_512.png',
+              height: 40,  // Adjust this value to fit your logo
+              width: 40,   // Adjust this value to fit your logo
             ),
             SizedBox(width: 10),
             Text(
