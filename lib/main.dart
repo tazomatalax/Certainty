@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui'; // Add this import for ImageFilter
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/animation.dart';
+import 'package:share_plus/share_plus.dart';
 
 // Use WebDatabaseHelper for web, and DatabaseHelper for other platforms
 import 'database_helper.dart' if (dart.library.html) 'web_database_helper.dart' as db_helper;
@@ -167,6 +168,13 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     }
   }
 
+  void _shareTruth() {
+    if (truths.isNotEmpty) {
+      String truthText = truths[_currentTruthIndex]['text'];
+      Share.share('Hey, I saw this and wanted to share with you. "$truthText" \n\nCheck out Certainty on the App/Play Store');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -248,6 +256,13 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     onPressed: _toggleFavorite,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.share,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: _shareTruth,
                   ),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
