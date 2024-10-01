@@ -14,10 +14,15 @@ class BreathingBackground extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: RadialGradient(
               center: Alignment.center,
-              radius: 0.8 * animation.value,
+              radius: 0.5 + 0.5 * animation.value,
               colors: [
-                Theme.of(context).colorScheme.surface.withOpacity(0.6),
-                Theme.of(context).colorScheme.background.withOpacity(0.9),
+                // Darken the inner color and reduce its opacity
+                HSLColor.fromColor(Theme.of(context).colorScheme.surface)
+                    .withLightness(0.3 + 0.1 * animation.value)
+                    .toColor()
+                    .withOpacity(0.5),
+                // Darken the outer color
+                Theme.of(context).colorScheme.background.withOpacity(0.95),
               ],
             ),
           ),

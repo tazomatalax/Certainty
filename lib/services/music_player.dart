@@ -52,4 +52,17 @@ class MusicPlayer {
       await play();
     }
   }
+
+  void playNext() {
+    _currentIndex = (_currentIndex + 1) % _playlist.length;
+    play();
+  }
+
+  void playPrevious() {
+    _currentIndex = (_currentIndex - 1 + _playlist.length) % _playlist.length;
+    play();
+  }
+
+  Stream<Duration> get onDurationChanged => audioPlayer.onDurationChanged;
+  Stream<Duration> get onPositionChanged => audioPlayer.onPositionChanged;
 }

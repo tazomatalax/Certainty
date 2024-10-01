@@ -1,8 +1,10 @@
 import 'dart:html' as html;
 import 'dart:convert';
+import 'dart:math';
 
 class WebDatabaseHelper {
   static const String _storageKey = 'truths_data';
+  final Random _random = Random();
 
   WebDatabaseHelper() {
     _initializeData();
@@ -23,11 +25,16 @@ class WebDatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> getTruths() async {
-    return _getStoredData();
+    List<Map<String, dynamic>> truths = _getStoredData();
+    truths.shuffle(_random);
+    return truths;
   }
 
   Future<List<Map<String, dynamic>>> getFavoriteTruths() async {
-    return _getStoredData().where((truth) => truth['isFavorite'] == 1).toList();
+    List<Map<String, dynamic>> truths = _getStoredData();
+    List<Map<String, dynamic>> favorites = truths.where((truth) => truth['isFavorite'] == 1).toList();
+    favorites.sort((a, b) => a['id'].compareTo(b['id']));
+    return favorites;
   }
 
   Future<void> toggleFavorite(int id) async {

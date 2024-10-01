@@ -46,7 +46,8 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   List<Map<String, dynamic>> truths = [];
-  int _currentTruthIndex = 0;
+  List<int> _randomOrder = [];
+  int _currentIndex = 0;
   final _databaseHelper = db_helper.getDatabaseHelper();
   bool _showingFavorites = false;
   late AnimationController _breathingController;
@@ -90,14 +91,17 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
         : await _databaseHelper.getTruths();
     setState(() {
       truths = loadedTruths;
-      _currentTruthIndex = 0;
+      _currentIndex = 0;
+      if (!_showingFavorites) {
+        _randomOrder = List<int>.generate(truths.length, (i) => i)..shuffle();
+      }
     });
     _controller.forward(from: 0.0);
   }
 
   Future<void> _toggleFavorite() async {
     if (truths.isNotEmpty) {
-      int currentId = truths[_currentTruthIndex]['id'];
+      int currentId = truths[_currentIndex]['id'];
       await _databaseHelper.toggleFavorite(currentId);
       
       List<Map<String, dynamic>> updatedTruths = _showingFavorites
@@ -106,9 +110,9 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       
       setState(() {
         truths = updatedTruths;
-        _currentTruthIndex = truths.indexWhere((truth) => truth['id'] == currentId);
-        if (_currentTruthIndex == -1) {
-          _currentTruthIndex = truths.isEmpty ? 0 : truths.length - 1;
+        _currentIndex = truths.indexWhere((truth) => truth['id'] == currentId);
+        if (_currentIndex == -1) {
+          _currentIndex = truths.isEmpty ? 0 : truths.length - 1;
         }
       });
     }
@@ -118,7 +122,13 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     if (truths.isEmpty) return;
     _controller.reverse().then((_) {
       setState(() {
-        _currentTruthIndex = (_currentTruthIndex + 1) % truths.length;
+        if (_showingFavorites) {
+          _currentIndex = (_currentIndex + 1) % truths.length;
+        } else {
+          int currentRandomIndex = _randomOrder.indexOf(_currentIndex);
+          int nextRandomIndex = (currentRandomIndex + 1) % _randomOrder.length;
+          _currentIndex = _randomOrder[nextRandomIndex];
+        }
       });
       _controller.forward();
     });
@@ -159,7 +169,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
 
   void _shareTruth() {
     if (truths.isNotEmpty) {
-      String truthText = truths[_currentTruthIndex]['text'];
+      String truthText = truths[_currentIndex]['text'];
       Share.share('Hey, I saw this and wanted to share with you. "$truthText" \n\nCheck out Certainty on the App/Play Store');
     }
   }
@@ -236,7 +246,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        truths.isNotEmpty ? truths[_currentTruthIndex]['text'] : '',
+                        truths.isNotEmpty ? truths[_currentIndex]['text'] : '',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 24,
@@ -253,22 +263,15 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                 children: [
                   IconButton(
                     icon: Icon(
-                      truths.isNotEmpty && truths[_currentTruthIndex]['isFavorite'] == 1
+                      truths.isNotEmpty && truths[_currentIndex]['isFavorite'] == 1
                           ? Icons.favorite
                           : Icons.favorite_border,
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     onPressed: _toggleFavorite,
                   ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.share,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    onPressed: _shareTruth,
-                  ),
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: ElevatedButton(
                       onPressed: _changeTruth,
                       child: const Text('Next', style: TextStyle(fontSize: 20)),
@@ -278,6 +281,13 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.share,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    onPressed: _shareTruth,
                   ),
                 ],
               ),
