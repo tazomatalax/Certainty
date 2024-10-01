@@ -4,6 +4,7 @@ import 'widgets/breathing_background.dart';
 import 'widgets/music_sidebar.dart';
 import 'services/music_player.dart';
 import 'database_helper.dart' if (dart.library.html) 'web_database_helper.dart' as db_helper;
+import 'widgets/settings_sidebar.dart'; // Add this import
 
 void main() {
   runApp(const CertaintyApp());
@@ -53,6 +54,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   late AnimationController _breathingController;
   late Animation<double> _breathingAnimation;
   late MusicPlayer _musicPlayer;
+  String _shareMessage = 'Hey, I saw this and wanted to share with you. "{truth}" \n\nCheck out Certainty on the App/Play Store';
 
   @override
   void initState() {
@@ -167,10 +169,21 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     }
   }
 
+  void _openSettingsSidebar() {
+    Scaffold.of(context).openDrawer();
+  }
+
+  void _updateShareMessage(String newMessage) {
+    setState(() {
+      _shareMessage = newMessage;
+    });
+  }
+
   void _shareTruth() {
     if (truths.isNotEmpty) {
       String truthText = truths[_currentIndex]['text'];
-      Share.share('Hey, I saw this and wanted to share with you. "$truthText" \n\nCheck out Certainty on the App/Play Store');
+      String formattedMessage = _shareMessage.replaceAll('{truth}', '"$truthText"');
+      Share.share(formattedMessage);
     }
   }
 
@@ -182,25 +195,28 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         centerTitle: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Image.asset(
-              'assets/certainty_logo_512.png',
-              height: 40,
-              width: 40,
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Certainty',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 24,
-                fontWeight: FontWeight.w300,
-                letterSpacing: 1.5,
+        title: GestureDetector(
+          onTap: _openSettingsSidebar,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Image.asset(
+                'assets/certainty_logo_512.png',
+                height: 40,
+                width: 40,
               ),
-            ),
-          ],
+              SizedBox(width: 10),
+              Text(
+                'Certainty',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
@@ -231,6 +247,10 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
             },
           ),
         ],
+      ),
+      drawer: SettingsSidebar(
+        currentShareMessage: _shareMessage,
+        onUpdateShareMessage: _updateShareMessage,
       ),
       endDrawer: MusicSidebar(musicPlayer: _musicPlayer),
       body: Stack(
