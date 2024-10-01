@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'dart:math';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -19,7 +20,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'truths_database.db');
     return await openDatabase(
       path, 
-      version: 4,  // Increase this to 4
+      version: 3,  // Increment this
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -51,8 +52,19 @@ class DatabaseHelper {
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Add the isFavorite column if it doesn't exist
-      await db.execute('ALTER TABLE truths ADD COLUMN isFavorite INTEGER DEFAULT 0');
+      // Clear existing truths
+      await db.delete('truths');
+      
+      // Re-insert initial truths with correct categories
+      for (Map<String, String> truth in initialTruths) {
+        await db.insert('truths', {
+          'text': truth['text'], 
+          'isUserGenerated': 0, 
+          'isFavorite': 0,
+          'isCustom': 0,
+          'category': truth['category']
+        });
+      }
     }
     if (oldVersion < 3) {
       // Add the isCustom column
@@ -87,19 +99,32 @@ class DatabaseHelper {
       'isUserGenerated': 1, 
       'isFavorite': 0,
       'isCustom': 1,
-      'category': category.isNotEmpty ? category : 'General' // Provide a default category if empty
+      'category': category
     });
   }
 
   Future<List<String>> getCategories() async {
     Database db = await database;
-    List<Map<String, dynamic>> result = await db.query('truths', distinct: true, columns: ['category']);
-    return result.map((row) => row['category'] as String).toList();
+    List<Map<String, dynamic>> result = await db.query(
+      'truths',
+      columns: ['category'],
+      distinct: true,
+      where: 'category IS NOT NULL AND category != ""'
+    );
+    List<String> categories = result.map((row) => row['category'] as String).toList();
+    categories.sort(); // Sort the categories alphabetically
+    print("Categories from database: $categories"); // Add this line for debugging
+    return categories;
   }
 
   Future<List<Map<String, dynamic>>> getTruthsByCategory(String category) async {
     Database db = await database;
-    return await db.query('truths', where: 'category = ?', whereArgs: [category]);
+    try {
+      return await db.query('truths', where: 'category = ?', whereArgs: [category]);
+    } catch (e) {
+      print("Error fetching truths by category: $e");
+      return [];
+    }
   }
 
   Future<int> toggleFavorite(int id) async {
@@ -129,6 +154,35 @@ class DatabaseHelper {
   Future<int> deleteTruth(int id) async {
     Database db = await database;
     return await db.delete('truths', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> printAllTruths() async {
+    Database db = await database;
+    List<Map<String, dynamic>> allTruths = await db.query('truths');
+    print("Total truths in database: ${allTruths.length}");
+    for (var truth in allTruths) {
+      print("ID: ${truth['id']}, Text: ${truth['text'].substring(0, min(20, (truth['text'] as String).length))}..., Category: ${truth['category']}");
+    }
+  }
+
+  Future<void> forceUpgrade() async {
+    Database db = await database;
+    int version = await db.getVersion();
+    print("Current database version: $version");
+    if (version < 3) {
+      print("Upgrading database from version $version to 3");
+      await _onUpgrade(db, version, 3);
+      await db.setVersion(3);
+      print("Database upgraded to version 3");
+    } else {
+      print("Database is already at version 3");
+    }
+  }
+
+  Future<void> deleteDatabase() async {
+    String path = join(await getDatabasesPath(), 'truths_database.db');
+    await databaseFactory.deleteDatabase(path);
+    print("Database deleted");
   }
 }
 

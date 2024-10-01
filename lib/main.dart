@@ -56,11 +56,16 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   late MusicPlayer _musicPlayer;
   String _shareMessage = 'Hey, I saw this and wanted to share with you. "{truth}" \n\nCheck out Certainty on the App/Play Store';
   bool _showingCustomTruths = false;
+  List<String> _categories = ['All'];
+  String _currentCategory = 'All';
 
   @override
   void initState() {
     super.initState();
+    _upgradeDatabase();
     _loadTruths();
+    _loadCategories();
+    _databaseHelper.printAllTruths(); // Add this line for debugging
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -79,6 +84,25 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     );
     
     _musicPlayer = MusicPlayer();
+  }
+
+  Future<void> _upgradeDatabase() async {
+    print("Starting database upgrade");
+    await _databaseHelper.deleteDatabase(); // Add this line
+    await _databaseHelper.forceUpgrade();
+    print("Database upgrade completed");
+    await _loadTruths();
+    await _loadCategories();
+    print("Truths and categories loaded");
+  }
+
+  Future<void> _loadCategories() async {
+    List<String> dbCategories = await _databaseHelper.getCategories();
+    print("Loaded categories from DB: $dbCategories");
+    setState(() {
+      _categories = ['All', ...dbCategories];
+    });
+    print("Final categories list: $_categories");
   }
 
   void _toggleShowFavorites() {
@@ -122,17 +146,16 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   }
 
   Future<void> _loadTruths() async {
-    List<Map<String, dynamic>> loadedTruths = await _databaseHelper.getTruths();
-    print("Loaded truths: $loadedTruths"); // Add this line
+    List<Map<String, dynamic>> loadedTruths;
+    if (_currentCategory == 'All' || !_categories.contains(_currentCategory)) {
+      loadedTruths = await _databaseHelper.getTruths();
+    } else {
+      loadedTruths = await _databaseHelper.getTruthsByCategory(_currentCategory);
+    }
     setState(() {
       truths = loadedTruths;
       _currentIndex = 0;
-      _showingCustomTruths = false;
-      if (!_showingFavorites && !_showingCustomTruths) {
-        _randomOrder = List<int>.generate(truths.length, (i) => i)..shuffle();
-      } else {
-        _randomOrder = List<int>.generate(_filteredTruths.length, (i) => i);
-      }
+      _randomOrder = List<int>.generate(truths.length, (i) => i)..shuffle();
     });
     _controller.forward(from: 0.0);
   }
@@ -221,6 +244,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                 if (newTruth.isNotEmpty) {
                   await _databaseHelper.insertTruth(newTruth, category);
                   await _loadTruths();
+                  await _loadCategories(); // Add this line
                   Navigator.of(context).pop();
                 }
               },
@@ -318,6 +342,37 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     );
   }
 
+  void _showCategoryDialog() {
+    print("Categories in dialog: $_categories"); // Add this line
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select Category'),
+          content: Container(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _categories.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(_categories[index]),
+                  onTap: () {
+                    setState(() {
+                      _currentCategory = _categories[index];
+                    });
+                    _loadTruths();
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -327,7 +382,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
         elevation: 0,
         centerTitle: true,
         title: GestureDetector(
-          onTap: _openSettingsSidebar,
+          onTap: _showCategoryDialog,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -337,13 +392,16 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                 width: 40,
               ),
               SizedBox(width: 10),
-              Text(
-                'Certainty',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 1.5,
+              Flexible(
+                child: Text(
+                  _currentCategory == 'All' ? 'Certainty' : _currentCategory,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                    letterSpacing: 1.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
