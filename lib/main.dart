@@ -55,6 +55,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   late Animation<double> _breathingAnimation;
   late MusicPlayer _musicPlayer;
   String _shareMessage = 'Hey, I saw this and wanted to share with you. "{truth}" \n\nCheck out Certainty on the App/Play Store';
+  bool _showingCustomTruths = false;
 
   @override
   void initState() {
@@ -87,15 +88,50 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     _loadTruths();
   }
 
+  void _toggleShowCustomTruths() async {
+    if (!_showingCustomTruths) {
+      List<Map<String, dynamic>> customTruths = await _databaseHelper.getCustomTruths();
+      print("Custom truths loaded: $customTruths");
+      setState(() {
+        truths = customTruths;
+      });
+    }
+    setState(() {
+      _showingCustomTruths = !_showingCustomTruths;
+      _showingFavorites = false;
+      _currentIndex = 0;
+      if (_showingCustomTruths) {
+        _randomOrder = List<int>.generate(truths.length, (i) => i);
+      } else {
+        _loadTruths();
+      }
+    });
+    _controller.forward(from: 0.0);
+  }
+
+  List<Map<String, dynamic>> get _filteredTruths {
+    if (_showingFavorites) {
+      return truths.where((truth) => truth['isFavorite'] == 1).toList();
+    } else if (_showingCustomTruths) {
+      List<Map<String, dynamic>> customTruths = truths.where((truth) => truth['isCustom'] == 1).toList();
+      print("Filtered custom truths: $customTruths"); // Add this line
+      return customTruths;
+    } else {
+      return truths;
+    }
+  }
+
   Future<void> _loadTruths() async {
-    List<Map<String, dynamic>> loadedTruths = _showingFavorites
-        ? await _databaseHelper.getFavoriteTruths()
-        : await _databaseHelper.getTruths();
+    List<Map<String, dynamic>> loadedTruths = await _databaseHelper.getTruths();
+    print("Loaded truths: $loadedTruths"); // Add this line
     setState(() {
       truths = loadedTruths;
       _currentIndex = 0;
-      if (!_showingFavorites) {
+      _showingCustomTruths = false;
+      if (!_showingFavorites && !_showingCustomTruths) {
         _randomOrder = List<int>.generate(truths.length, (i) => i)..shuffle();
+      } else {
+        _randomOrder = List<int>.generate(_filteredTruths.length, (i) => i);
       }
     });
     _controller.forward(from: 0.0);
@@ -136,37 +172,63 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     });
   }
 
-  Future<void> _addNewTruth() async {
-    String? newTruth = await showDialog<String>(
+  void _addNewTruth(BuildContext context) {
+    String newTruth = '';
+    String category = 'General';
+    showDialog(
       context: context,
       builder: (BuildContext context) {
-        String inputText = '';
         return AlertDialog(
           title: Text('Add New Truth'),
-          content: TextField(
-            onChanged: (value) {
-              inputText = value;
-            },
-            decoration: InputDecoration(hintText: "Enter your truth"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                autofocus: true,
+                decoration: InputDecoration(hintText: 'Enter your truth'),
+                onChanged: (value) {
+                  newTruth = value;
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: category,
+                decoration: InputDecoration(labelText: 'Category'),
+                items: ['General', 'Motivation', 'Self-care', 'Mindfulness'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    category = newValue;
+                  }
+                },
+              ),
+            ],
           ),
           actions: <Widget>[
             TextButton(
               child: Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
             TextButton(
               child: Text('Add'),
-              onPressed: () => Navigator.of(context).pop(inputText),
+              onPressed: () async {
+                if (newTruth.isNotEmpty) {
+                  await _databaseHelper.insertTruth(newTruth, category);
+                  await _loadTruths();
+                  Navigator.of(context).pop();
+                }
+              },
             ),
           ],
         );
       },
     );
-
-    if (newTruth != null && newTruth.isNotEmpty) {
-      await _databaseHelper.insertTruth(newTruth);
-      _loadTruths();
-    }
   }
 
   void _openSettingsSidebar() {
@@ -187,6 +249,75 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     }
   }
 
+  void _editOrDeleteTruth(Map<String, dynamic> truth) {
+    String updatedText = truth['text'];
+    String category = truth['category'] ?? 'General'; // Provide a default value if category is null
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit or Delete Truth'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                autofocus: true,
+                decoration: InputDecoration(hintText: 'Edit your truth'),
+                controller: TextEditingController(text: updatedText),
+                onChanged: (value) {
+                  updatedText = value;
+                },
+              ),
+              SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: category,
+                decoration: InputDecoration(labelText: 'Category'),
+                items: ['General', 'Motivation', 'Self-care', 'Mindfulness'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    category = newValue;
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Delete'),
+              onPressed: () async {
+                await _databaseHelper.deleteTruth(truth['id']);
+                await _loadTruths();
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Save'),
+              onPressed: () async {
+                if (updatedText.isNotEmpty) {
+                  await _databaseHelper.updateTruth(truth['id'], updatedText, category);
+                  await _loadTruths();
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,11 +325,11 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
         title: GestureDetector(
           onTap: _openSettingsSidebar,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset(
                 'assets/certainty_logo_512.png',
@@ -219,20 +350,6 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              _showingFavorites ? Icons.favorite : Icons.favorite_border,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            onPressed: _toggleShowFavorites,
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.add,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            onPressed: _addNewTruth,
-          ),
           Builder(
             builder: (BuildContext context) {
               return IconButton(
@@ -251,6 +368,11 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       drawer: SettingsSidebar(
         currentShareMessage: _shareMessage,
         onUpdateShareMessage: _updateShareMessage,
+        onToggleFavorites: _toggleShowFavorites,
+        onToggleCustomTruths: _toggleShowCustomTruths,
+        onAddNewTruth: _addNewTruth,
+        showingFavorites: _showingFavorites,
+        showingCustomTruths: _showingCustomTruths,
       ),
       endDrawer: MusicSidebar(musicPlayer: _musicPlayer),
       body: Stack(
@@ -265,13 +387,20 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                     opacity: _fadeAnimation,
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        truths.isNotEmpty ? truths[_currentIndex]['text'] : '',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onBackground,
+                      child: GestureDetector(
+                        onLongPress: () {
+                          if (truths[_currentIndex]['isCustom'] == 1) {
+                            _editOrDeleteTruth(truths[_currentIndex]);
+                          }
+                        },
+                        child: Text(
+                          truths.isNotEmpty ? truths[_currentIndex]['text'] : '',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onBackground,
+                          ),
                         ),
                       ),
                     ),

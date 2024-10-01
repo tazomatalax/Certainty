@@ -18,6 +18,7 @@ class WebDatabaseHelper {
           'text': entry.value,
           'isUserGenerated': 0,
           'isFavorite': 0,
+          'isCustom': 0,  // Add this line
         };
       }).toList();
       _saveData(initialData);
@@ -37,6 +38,13 @@ class WebDatabaseHelper {
     return favorites;
   }
 
+  Future<List<Map<String, dynamic>>> getCustomTruths() async {
+    List<Map<String, dynamic>> truths = _getStoredData();
+    List<Map<String, dynamic>> customTruths = truths.where((truth) => truth['isCustom'] == 1).toList();
+    customTruths.sort((a, b) => a['id'].compareTo(b['id']));
+    return customTruths;
+  }
+
   Future<void> toggleFavorite(int id) async {
     List<Map<String, dynamic>> truths = _getStoredData();
     int index = truths.indexWhere((truth) => truth['id'] == id);
@@ -53,6 +61,7 @@ class WebDatabaseHelper {
       'text': text,
       'isUserGenerated': 1,
       'isFavorite': 0,
+      'isCustom': 1,  // Add this line
     });
     _saveData(truths);
   }
