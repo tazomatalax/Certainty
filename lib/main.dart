@@ -182,7 +182,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // Make scaffold background transparent
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
@@ -192,8 +192,8 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
           children: [
             Image.asset(
               'assets/certainty_logo_512.png',
-              height: 40,  // Adjust this value to fit your logo
-              width: 40,   // Adjust this value to fit your logo
+              height: 40,
+              width: 40,
             ),
             SizedBox(width: 10),
             Text(
@@ -222,9 +222,22 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
             ),
             onPressed: _addNewTruth,
           ),
-          MusicSelectorWidget(musicPlayer: _musicPlayer),
+          Builder(
+            builder: (BuildContext context) {
+              return IconButton(
+                icon: Icon(
+                  Icons.music_note,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+              );
+            },
+          ),
         ],
       ),
+      endDrawer: MusicSidebar(musicPlayer: _musicPlayer),
       body: Stack(
         children: [
           BreathingBackground(animation: _breathingAnimation),
@@ -426,15 +439,15 @@ class MusicPlayer {
     });
   }
 
-  void play() async {
+  Future<void> play() async {
     await _audioPlayer.play(AssetSource(_playlist[_currentIndex]));
   }
 
-  void pause() async {
+  Future<void> pause() async {
     await _audioPlayer.pause();
   }
 
-  void stop() async {
+  Future<void> stop() async {
     await _audioPlayer.stop();
   }
 
@@ -453,57 +466,97 @@ class MusicPlayer {
   void dispose() {
     _audioPlayer.dispose();
   }
+
+  bool get isPlaying => _audioPlayer.state == PlayerState.playing;
+
+  Future<void> togglePlayPause() async {
+    if (isPlaying) {
+      await pause();
+    } else {
+      await play();
+    }
+  }
 }
 
-class MusicSelectorWidget extends StatefulWidget {
+class MusicSidebar extends StatefulWidget {
   final MusicPlayer musicPlayer;
 
-  const MusicSelectorWidget({Key? key, required this.musicPlayer}) : super(key: key);
+  const MusicSidebar({Key? key, required this.musicPlayer}) : super(key: key);
 
   @override
-  _MusicSelectorWidgetState createState() => _MusicSelectorWidgetState();
+  _MusicSidebarState createState() => _MusicSidebarState();
 }
 
-class _MusicSelectorWidgetState extends State<MusicSelectorWidget> {
-  bool _isPlaying = false;
-
+class _MusicSidebarState extends State<MusicSidebar> {
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<int>(
-      icon: Icon(
-        _isPlaying ? Icons.music_note : Icons.music_note_outlined,
-        color: Theme.of(context).colorScheme.primary,
+    return Drawer(
+      child: Container(
+        color: Theme.of(context).colorScheme.surface,
+        child: Column(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              child: Center(
+                child: Text(
+                  'Music Player',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 24,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                children: [
+                  ListTile(
+                    title: Text('Calm Music 1'),
+                    onTap: () => _playTrack(0),
+                  ),
+                  ListTile(
+                    title: Text('Calm Music 2'),
+                    onTap: () => _playTrack(1),
+                  ),
+                  ListTile(
+                    title: Text('Calm Music 3'),
+                    onTap: () => _playTrack(2),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: _togglePlayPause,
+                child: StreamBuilder<PlayerState>(
+                  stream: widget.musicPlayer._audioPlayer.onPlayerStateChanged,
+                  builder: (context, snapshot) {
+                    final playerState = snapshot.data;
+                    final isPlaying = playerState == PlayerState.playing;
+                    return Text(isPlaying ? 'Pause' : 'Play');
+                  },
+                ),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-      onSelected: (int index) {
-        setState(() {
-          _isPlaying = true;
-        });
-        widget.musicPlayer.selectTrack(index);
-      },
-      itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-        PopupMenuItem<int>(
-          value: 0,
-          child: Text('Calm Music 1'),
-        ),
-        PopupMenuItem<int>(
-          value: 1,
-          child: Text('Calm Music 2'),
-        ),
-        PopupMenuItem<int>(
-          value: 2,
-          child: Text('Calm Music 3'),
-        ),
-        PopupMenuItem<int>(
-          value: -1,
-          child: Text(_isPlaying ? 'Pause' : 'Play'),
-          onTap: () {
-            setState(() {
-              _isPlaying = !_isPlaying;
-            });
-            _isPlaying ? widget.musicPlayer.play() : widget.musicPlayer.pause();
-          },
-        ),
-      ],
     );
+  }
+
+  void _playTrack(int index) {
+    widget.musicPlayer.selectTrack(index);
+    setState(() {}); // This line is correct now
+  }
+
+  void _togglePlayPause() {
+    widget.musicPlayer.togglePlayPause();
+    setState(() {}); // This line is correct now
   }
 }
