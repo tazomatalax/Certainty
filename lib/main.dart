@@ -4,6 +4,7 @@ import 'dart:ui'; // Add this import for ImageFilter
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/animation.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 // Use WebDatabaseHelper for web, and DatabaseHelper for other platforms
 import 'database_helper.dart' if (dart.library.html) 'web_database_helper.dart' as db_helper;
@@ -56,6 +57,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   late AnimationController _grassAnimationController;
   late AnimationController _breathingController;
   late Animation<double> _breathingAnimation;
+  late MusicPlayer _musicPlayer;
 
   @override
   void initState() {
@@ -82,6 +84,8 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     _breathingAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
       CurvedAnimation(parent: _breathingController, curve: Curves.easeInOut),
     );
+    
+    _musicPlayer = MusicPlayer();
   }
 
   void _toggleShowFavorites() {
@@ -218,6 +222,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
             ),
             onPressed: _addNewTruth,
           ),
+          MusicSelectorWidget(musicPlayer: _musicPlayer),
         ],
       ),
       body: Stack(
@@ -290,6 +295,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     _controller.dispose();
     _grassAnimationController.dispose();
     _breathingController.dispose();
+    _musicPlayer.dispose();
     super.dispose();
   }
 }
@@ -401,6 +407,103 @@ class BreathingBackground extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class MusicPlayer {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  List<String> _playlist = [
+    'calm_music_1.mp3',
+    'calm_music_2.mp3',
+    'calm_music_3.mp3',
+  ];
+  int _currentIndex = 0;
+
+  MusicPlayer() {
+    _audioPlayer.onPlayerComplete.listen((_) {
+      _playNext();
+    });
+  }
+
+  void play() async {
+    await _audioPlayer.play(AssetSource(_playlist[_currentIndex]));
+  }
+
+  void pause() async {
+    await _audioPlayer.pause();
+  }
+
+  void stop() async {
+    await _audioPlayer.stop();
+  }
+
+  void _playNext() {
+    _currentIndex = (_currentIndex + 1) % _playlist.length;
+    play();
+  }
+
+  void selectTrack(int index) {
+    if (index >= 0 && index < _playlist.length) {
+      _currentIndex = index;
+      play();
+    }
+  }
+
+  void dispose() {
+    _audioPlayer.dispose();
+  }
+}
+
+class MusicSelectorWidget extends StatefulWidget {
+  final MusicPlayer musicPlayer;
+
+  const MusicSelectorWidget({Key? key, required this.musicPlayer}) : super(key: key);
+
+  @override
+  _MusicSelectorWidgetState createState() => _MusicSelectorWidgetState();
+}
+
+class _MusicSelectorWidgetState extends State<MusicSelectorWidget> {
+  bool _isPlaying = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<int>(
+      icon: Icon(
+        _isPlaying ? Icons.music_note : Icons.music_note_outlined,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      onSelected: (int index) {
+        setState(() {
+          _isPlaying = true;
+        });
+        widget.musicPlayer.selectTrack(index);
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+        PopupMenuItem<int>(
+          value: 0,
+          child: Text('Calm Music 1'),
+        ),
+        PopupMenuItem<int>(
+          value: 1,
+          child: Text('Calm Music 2'),
+        ),
+        PopupMenuItem<int>(
+          value: 2,
+          child: Text('Calm Music 3'),
+        ),
+        PopupMenuItem<int>(
+          value: -1,
+          child: Text(_isPlaying ? 'Pause' : 'Play'),
+          onTap: () {
+            setState(() {
+              _isPlaying = !_isPlaying;
+            });
+            _isPlaying ? widget.musicPlayer.play() : widget.musicPlayer.pause();
+          },
+        ),
+      ],
     );
   }
 }
