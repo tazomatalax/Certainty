@@ -38,15 +38,15 @@ class MusicSidebarState extends State<MusicSidebar> {
                 children: [
                   ListTile(
                     title: Text('Ocean Waves'),
-                    onTap: () => _playTrack(0),
+                    onTap: () => widget.musicPlayer.selectTrack(0),
                   ),
                   ListTile(
                     title: Text('Charmed Meditation'),
-                    onTap: () => _playTrack(1),
+                    onTap: () => widget.musicPlayer.selectTrack(1),
                   ),
                   ListTile(
                     title: Text('Moonlight Meditation'),
-                    onTap: () => _playTrack(2),
+                    onTap: () => widget.musicPlayer.selectTrack(2),
                   ),
                 ],
               ),
@@ -63,19 +63,33 @@ class MusicSidebarState extends State<MusicSidebar> {
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          StreamBuilder<Duration>(
-            stream: widget.musicPlayer.onPositionChanged,
-            builder: (context, positionSnapshot) {
+          StreamBuilder<int>(
+            stream: widget.musicPlayer.currentIndexStream,
+            builder: (context, indexSnapshot) {
               return StreamBuilder<Duration>(
-                stream: widget.musicPlayer.onDurationChanged,
-                builder: (context, durationSnapshot) {
-                  final position = positionSnapshot.data ?? Duration.zero;
-                  final duration = durationSnapshot.data ?? Duration.zero;
-                  return Slider(
-                    value: position.inSeconds.toDouble(),
-                    max: duration.inSeconds.toDouble(),
-                    onChanged: (value) {
-                      widget.musicPlayer.audioPlayer.seek(Duration(seconds: value.toInt()));
+                stream: widget.musicPlayer.onPositionChanged,
+                builder: (context, positionSnapshot) {
+                  return StreamBuilder<Duration>(
+                    stream: widget.musicPlayer.onDurationChanged,
+                    builder: (context, durationSnapshot) {
+                      final position = positionSnapshot.data ?? Duration.zero;
+                      final duration = durationSnapshot.data ?? Duration.zero;
+                      
+                      final max = duration.inSeconds.toDouble();
+                      final value = position.inSeconds.toDouble().clamp(0.0, max).toDouble();
+                      
+                      return Opacity(
+                        opacity: duration > Duration.zero ? 1.0 : 0.5,
+                        child: Slider(
+                          value: value,
+                          max: max > 0 ? max : 1.0,
+                          onChanged: (value) {
+                            if (duration > Duration.zero) {
+                              widget.musicPlayer.audioPlayer.seek(Duration(seconds: value.toInt()));
+                            }
+                          },
+                        ),
+                      );
                     },
                   );
                 },
@@ -90,7 +104,8 @@ class MusicSidebarState extends State<MusicSidebar> {
                 onPressed: widget.musicPlayer.playPrevious,
               ),
               StreamBuilder<PlayerState>(
-                stream: widget.musicPlayer.audioPlayer.onPlayerStateChanged,
+                stream: widget.musicPlayer.playerStateStream,
+                initialData: widget.musicPlayer.playerState,
                 builder: (context, snapshot) {
                   final playerState = snapshot.data;
                   final isPlaying = playerState == PlayerState.playing;
