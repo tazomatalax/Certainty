@@ -37,15 +37,15 @@ class MusicSidebarState extends State<MusicSidebar> {
               child: ListView(
                 children: [
                   ListTile(
-                    title: Text('Ocean Waves'),
+                    title: const Text('Ocean Waves'),
                     onTap: () => widget.musicPlayer.selectTrack(0),
                   ),
                   ListTile(
-                    title: Text('Charmed Meditation'),
+                    title: const Text('Charmed Meditation'),
                     onTap: () => widget.musicPlayer.selectTrack(1),
                   ),
                   ListTile(
-                    title: Text('Moonlight Meditation'),
+                    title: const Text('Moonlight Meditation'),
                     onTap: () => widget.musicPlayer.selectTrack(2),
                   ),
                 ],
@@ -100,7 +100,7 @@ class MusicSidebarState extends State<MusicSidebar> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               IconButton(
-                icon: Icon(Icons.skip_previous),
+                icon: const Icon(Icons.skip_previous),
                 onPressed: widget.musicPlayer.playPrevious,
               ),
               StreamBuilder<PlayerState>(
@@ -116,7 +116,7 @@ class MusicSidebarState extends State<MusicSidebar> {
                 },
               ),
               IconButton(
-                icon: Icon(Icons.skip_next),
+                icon: const Icon(Icons.skip_next),
                 onPressed: widget.musicPlayer.playNext,
               ),
             ],

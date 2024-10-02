@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class BreathingBackground extends StatelessWidget {
   final Animation<double> animation;
 
-  const BreathingBackground({Key? key, required this.animation}) : super(key: key);
+  const BreathingBackground({super.key, required this.animation});
 
   @override
   Widget build(BuildContext context) {
@@ -16,13 +16,13 @@ class BreathingBackground extends StatelessWidget {
               center: Alignment.center,
               radius: 0.5 + 0.5 * animation.value,
               colors: [
-                // Darken the inner color and reduce its opacity
+                // Darker color in the center
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                // Lighter color at the edges
                 HSLColor.fromColor(Theme.of(context).colorScheme.surface)
-                    .withLightness(0.3 + 0.1 * animation.value)
+                    .withLightness(0.6 + 0.1 * animation.value)
                     .toColor()
-                    .withOpacity(0.5),
-                // Darken the outer color
-                Theme.of(context).colorScheme.background.withOpacity(0.95),
+                    .withOpacity(0.99),
               ],
             ),
           ),

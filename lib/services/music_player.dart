@@ -3,7 +3,7 @@ import 'dart:async';
 
 class MusicPlayer {
   final AudioPlayer audioPlayer = AudioPlayer();
-  List<String> _playlist = [
+  final List<String> _playlist = [
     'calm_music_1.mp3',
     'calm_music_2.mp3',
     'calm_music_3.mp3',

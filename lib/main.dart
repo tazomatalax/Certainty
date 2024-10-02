@@ -10,34 +10,91 @@ void main() {
   runApp(const CertaintyApp());
 }
 
-class CertaintyApp extends StatelessWidget {
+class CertaintyApp extends StatefulWidget {
   const CertaintyApp({super.key});
+
+  @override
+  _CertaintyAppState createState() => _CertaintyAppState();
+}
+
+class _CertaintyAppState extends State<CertaintyApp> {
+  String _currentSeason = 'Spring';
+
+final Map<String, ColorScheme> _seasonColorSchemes = {
+  'Spring': ColorScheme.fromSeed(
+    seedColor: const Color(0xFF5A7E7F), // Darker
+    brightness: Brightness.light,
+    surface: const Color(0xFFD0E4E4), // Darker
+    surfaceTint: const Color(0xFFC0CECE), // Darker
+    primary: const Color(0xFF5A7E7F), // Darker
+    secondary: const Color(0xFF98B8B8), // Darker
+    onSurface: const Color(0xFF1C2B2B), // Darker
+    onPrimary: Colors.white,
+  ),
+  'Summer': ColorScheme.fromSeed(
+    seedColor: const Color(0xFFF4A460),
+    brightness: Brightness.light,
+    surface: const Color(0xFFFFF5E6),
+    surfaceTint: const Color(0xFFFFE4B5),
+    primary: const Color(0xFFF4A460),
+    secondary: const Color(0xFFFFD700),
+    onSurface: const Color(0xFF4A3C31),
+    onPrimary: Colors.white,
+  ),
+  'Autumn': ColorScheme.fromSeed(
+    seedColor: const Color.fromARGB(255, 124, 63, 23), // Darker
+    brightness: Brightness.light,
+    surface: const Color(0xFFEFD0B6), // Darker
+    surfaceTint: const Color(0xFFDFC495), // Darker
+    primary: const Color(0xFFB2591E), // Darker
+    secondary: const Color(0xFFAD651F), // Darker
+    onSurface: const Color(0xFF3A2C21), // Darker
+    onPrimary: Colors.white,
+  ),
+  'Winter': ColorScheme.fromSeed(
+    seedColor: const Color(0xFF366294), // Darker
+    brightness: Brightness.light,
+    surface: const Color(0xFFC6D0E0), // Darker
+    surfaceTint: const Color(0xFF90A4BE), // Darker
+    primary: const Color(0xFF366294), // Darker
+    secondary: const Color(0xFF90A4BE), // Darker
+    onSurface: const Color(0xFF0E1A2A), // Darker
+    onPrimary: Colors.white,
+  ),
+};
+
+  void _changeSeason(String season) {
+    setState(() {
+      _currentSeason = season;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Certainty',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7A9E9F), // Soft teal
-          brightness: Brightness.dark,
-          surface: const Color(0xFF1E2A2A), // Dark teal (moved from background)
-          surfaceTint: const Color(0xFF2C3B3B), // Slightly lighter dark teal
-          primary: const Color(0xFF7A9E9F), // Soft teal
-          secondary: const Color(0xFFB8D8D8), // Light grayish cyan
-          onSurface: const Color(0xFFE0E0E0), // Light gray
-          onPrimary: Colors.white,
-        ),
+        colorScheme: _seasonColorSchemes[_currentSeason],
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      home: const TruthsHomePage(),
+      home: TruthsHomePage(
+        currentSeason: _currentSeason,
+        onChangeSeason: _changeSeason,
+      ),
     );
   }
 }
 
 class TruthsHomePage extends StatefulWidget {
-  const TruthsHomePage({super.key});
+  final String currentSeason;
+  final Function(String) onChangeSeason;
+
+  const TruthsHomePage({
+    super.key,
+    required this.currentSeason,
+    required this.onChangeSeason,
+  });
 
   @override
   _TruthsHomePageState createState() => _TruthsHomePageState();
@@ -75,8 +132,8 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     _controller.forward();
     
     _breathingController = AnimationController(
-      duration: const Duration(seconds: 4),
       vsync: this,
+      duration: const Duration(seconds: 8), // 4 seconds in, 4 seconds out
     )..repeat(reverse: true);
     
     _breathingAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
@@ -202,21 +259,21 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add New Truth'),
+          title: const Text('Add New Truth'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 autofocus: true,
-                decoration: InputDecoration(hintText: 'Enter your truth'),
+                decoration: const InputDecoration(hintText: 'Enter your truth'),
                 onChanged: (value) {
                   newTruth = value;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: category,
-                decoration: InputDecoration(labelText: 'Category'),
+                decoration: const InputDecoration(labelText: 'Category'),
                 items: ['General', 'Motivation', 'Self-care', 'Mindfulness'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -233,13 +290,13 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Add'),
+              child: const Text('Add'),
               onPressed: () async {
                 if (newTruth.isNotEmpty) {
                   await _databaseHelper.insertTruth(newTruth, category);
@@ -281,22 +338,22 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit or Delete Truth'),
+          title: const Text('Edit or Delete Truth'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 autofocus: true,
-                decoration: InputDecoration(hintText: 'Edit your truth'),
+                decoration: const InputDecoration(hintText: 'Edit your truth'),
                 controller: TextEditingController(text: updatedText),
                 onChanged: (value) {
                   updatedText = value;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: category,
-                decoration: InputDecoration(labelText: 'Category'),
+                decoration: const InputDecoration(labelText: 'Category'),
                 items: ['General', 'Motivation', 'Self-care', 'Mindfulness'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -313,7 +370,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Delete'),
+              child: const Text('Delete'),
               onPressed: () async {
                 await _databaseHelper.deleteTruth(truth['id']);
                 await _loadTruths();
@@ -321,13 +378,13 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
               },
             ),
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Save'),
+              child: const Text('Save'),
               onPressed: () async {
                 if (updatedText.isNotEmpty) {
                   await _databaseHelper.updateTruth(truth['id'], updatedText, category);
@@ -348,8 +405,8 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Select Category'),
-          content: Container(
+          title: const Text('Select Category'),
+          content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
@@ -373,6 +430,32 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     );
   }
 
+  void _showSeasonDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Season'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: ['Spring', 'Summer', 'Autumn', 'Winter'].map((String season) {
+                return ListTile(
+                  title: Text(season),
+                  onTap: () {
+                    widget.onChangeSeason(season);
+                    Navigator.of(context).pop();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -386,12 +469,12 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(
-                'assets/certainty_logo_512.png',
-                height: 40,
-                width: 40,
-              ),
-              SizedBox(width: 10),
+              // Image.asset(
+              //   'assets/certainty_logo_512.png',
+              //   height: 40,
+              //   width: 40,
+              // ),
+              const SizedBox(width: 10),
               Flexible(
                 child: Text(
                   _currentCategory == 'All' ? 'Certainty' : _currentCategory,
@@ -408,6 +491,13 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
           ),
         ),
         actions: [
+          IconButton(
+            icon: Icon(
+              Icons.palette,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            onPressed: _showSeasonDialog,
+          ),
           Builder(
             builder: (BuildContext context) {
               return IconButton(
@@ -457,7 +547,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onBackground,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -481,12 +571,12 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: ElevatedButton(
                       onPressed: _changeTruth,
-                      child: const Text('Next', style: TextStyle(fontSize: 20)),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(200, 60),
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       ),
+                      child: const Text('Next', style: TextStyle(fontSize: 20)),
                     ),
                   ),
                   IconButton(
