@@ -31,16 +31,37 @@ class _SettingsSidebarState extends State<SettingsSidebar> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
             ),
-            child: Text(
-              'Settings',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary,
-                fontSize: 24,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Image.asset(
+                  'assets/certainty_logo_512.png',
+                  height: 60,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Certainty',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Your personal truth compass',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                    fontSize: 16,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ),
           ),
           ListTile(
@@ -133,3 +154,4 @@ class _SettingsSidebarState extends State<SettingsSidebar> {
     super.dispose();
   }
 }
+
