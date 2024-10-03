@@ -121,7 +121,7 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   late AnimationController _breathingController;
   late Animation<double> _breathingAnimation;
   late MusicPlayer _musicPlayer;
-  String _shareMessage = 'Hey, I saw this and wanted to share with you. "{truth}" \n\nCheck out Certainty on the App/Play Store';
+  String _shareMessage = 'Hey, I saw this and wanted to share with you. "{truth}"'; //\n\nCheck out Certainty on the App/Play Store';
   bool _showingCustomTruths = false;
   List<String> _categories = ['All'];
   String _currentCategory = 'All';

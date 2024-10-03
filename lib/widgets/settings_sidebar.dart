@@ -107,6 +107,11 @@ class _SettingsSidebarState extends State<SettingsSidebar> {
               _showShareMessageDialog(context);
             },
           ),
+          // ListTile(
+          //   leading: Icon(Icons.message, color: Theme.of(context).colorScheme.primary),
+          //   title: const Text('Manage Share Templates'),
+          //   onTap: () => _manageShareTemplates(context),
+          // ),
           // Add more settings options here if needed
         ],
       ),
@@ -147,6 +152,10 @@ class _SettingsSidebarState extends State<SettingsSidebar> {
         );
       },
     ).then((_) => controller.dispose());
+  }
+
+  void _manageShareTemplates(BuildContext context) {
+    // Implement a dialog or screen to manage multiple share templates
   }
 
   @override
