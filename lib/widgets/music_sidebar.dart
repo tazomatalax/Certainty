@@ -4,14 +4,35 @@ import 'package:audioplayers/audioplayers.dart';
 
 class MusicSidebar extends StatefulWidget {
   final MusicPlayer musicPlayer;
+  final ScrollController? scrollController; // Added ScrollController parameter
 
-  const MusicSidebar({super.key, required this.musicPlayer});
+  const MusicSidebar({
+    super.key,
+    required this.musicPlayer,
+    this.scrollController, // Initialize via constructor
+  });
 
   @override
   MusicSidebarState createState() => MusicSidebarState();
 }
 
 class MusicSidebarState extends State<MusicSidebar> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = widget.scrollController ?? ScrollController();
+  }
+
+  @override
+  void dispose() {
+    if (widget.scrollController == null) {
+      _scrollController.dispose(); // Dispose only if it was internally created
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -35,6 +56,7 @@ class MusicSidebarState extends State<MusicSidebar> {
             ),
             Expanded(
               child: ListView(
+                controller: _scrollController, // Assigning the ScrollController
                 children: [
                   ListTile(
                     title: const Text('Ocean Waves'),
@@ -48,6 +70,7 @@ class MusicSidebarState extends State<MusicSidebar> {
                     title: const Text('Moonlight Meditation'),
                     onTap: () => widget.musicPlayer.selectTrack(2),
                   ),
+                  // Add more ListTiles if needed
                 ],
               ),
             ),
@@ -74,10 +97,11 @@ class MusicSidebarState extends State<MusicSidebar> {
                     builder: (context, durationSnapshot) {
                       final position = positionSnapshot.data ?? Duration.zero;
                       final duration = durationSnapshot.data ?? Duration.zero;
-                      
+
                       final max = duration.inSeconds.toDouble();
-                      final value = position.inSeconds.toDouble().clamp(0.0, max).toDouble();
-                      
+                      final value =
+                          position.inSeconds.toDouble().clamp(0.0, max).toDouble();
+
                       return Opacity(
                         opacity: duration > Duration.zero ? 1.0 : 0.5,
                         child: Slider(
@@ -85,7 +109,8 @@ class MusicSidebarState extends State<MusicSidebar> {
                           max: max > 0 ? max : 1.0,
                           onChanged: (value) {
                             if (duration > Duration.zero) {
-                              widget.musicPlayer.audioPlayer.seek(Duration(seconds: value.toInt()));
+                              widget.musicPlayer.audioPlayer
+                                  .seek(Duration(seconds: value.toInt()));
                             }
                           },
                         ),
@@ -110,7 +135,8 @@ class MusicSidebarState extends State<MusicSidebar> {
                   final playerState = snapshot.data;
                   final isPlaying = playerState == PlayerState.playing;
                   return IconButton(
-                    icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                    icon:
+                        Icon(isPlaying ? Icons.pause : Icons.play_arrow),
                     onPressed: widget.musicPlayer.togglePlayPause,
                   );
                 },

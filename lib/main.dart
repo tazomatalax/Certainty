@@ -18,17 +18,27 @@ class CertaintyApp extends StatefulWidget {
 }
 
 class _CertaintyAppState extends State<CertaintyApp> {
-  String _currentSeason = 'Spring';
+  String _currentSeason = 'Default';
 
 final Map<String, ColorScheme> _seasonColorSchemes = {
+  'Default': ColorScheme.fromSeed(
+    seedColor: const Color.fromARGB(255, 42, 155, 159), // Soft teal
+    brightness: Brightness.dark,
+    surface: const Color.fromARGB(255, 70, 155, 155), // Dark teal
+    surfaceTint: const Color.fromARGB(255, 80, 108, 108), // Slightly lighter dark teal
+    primary: const Color(0xFF7A9E9F), // Soft teal
+    secondary: const Color(0xFFB8D8D8), // Light grayish cyan
+    onSurface: const Color.fromARGB(255, 255, 255, 255), // Light gray
+    onPrimary: Colors.white,
+  ),
   'Spring': ColorScheme.fromSeed(
-    seedColor: const Color(0xFF5A7E7F), // Darker
+    seedColor: const Color(0xFF5A7E7F),
     brightness: Brightness.light,
-    surface: const Color(0xFFD0E4E4), // Darker
-    surfaceTint: const Color(0xFFC0CECE), // Darker
-    primary: const Color(0xFF5A7E7F), // Darker
-    secondary: const Color(0xFF98B8B8), // Darker
-    onSurface: const Color(0xFF1C2B2B), // Darker
+    surface: const Color(0xFFD0E4E4),
+    surfaceTint: const Color(0xFFC0CECE),
+    primary: const Color(0xFF5A7E7F),
+    secondary: const Color(0xFF98B8B8),
+    onSurface: const Color(0xFF1C2B2B),
     onPrimary: Colors.white,
   ),
   'Summer': ColorScheme.fromSeed(
@@ -166,7 +176,20 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     setState(() {
       _showingFavorites = !_showingFavorites;
     });
-    _loadTruths();
+    _loadTruths().then((_) {
+      if (_filteredTruths.isEmpty && _showingFavorites) {
+        // If there are no favorites, show a message and revert the toggle
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No favorite truths found.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        setState(() {
+          _showingFavorites = false;
+        });
+      }
+    });
   }
 
   void _toggleShowCustomTruths() async {
@@ -211,8 +234,8 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
     }
     setState(() {
       truths = loadedTruths;
-      _currentIndex = 0;
       _randomOrder = List<int>.generate(truths.length, (i) => i)..shuffle();
+      _currentIndex = _randomOrder.first; // Start with the first shuffled index
     });
     _controller.forward(from: 0.0);
   }
@@ -435,12 +458,12 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Select Season'),
+          title: const Text('Select Theme'),
           content: SizedBox(
             width: double.maxFinite,
             child: ListView(
               shrinkWrap: true,
-              children: ['Spring', 'Summer', 'Autumn', 'Winter'].map((String season) {
+              children: ['Default', 'Spring', 'Summer', 'Autumn', 'Winter'].map((String season) {
                 return ListTile(
                   title: Text(season),
                   onTap: () {
@@ -460,8 +483,9 @@ class _TruthsHomePageState extends State<TruthsHomePage> with TickerProviderStat
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         title: GestureDetector(
