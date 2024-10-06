@@ -45,7 +45,7 @@ void main() {
     // Optionally, add initial data to streams
     currentIndexController.add(0);
     positionController.add(Duration.zero);
-    durationController.add(Duration(minutes: 3));
+    durationController.add(const Duration(minutes: 3));
     playerStateController.add(PlayerState.paused);
   });
 
