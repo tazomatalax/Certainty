@@ -1,6 +1,6 @@
 # Certainty: Your Daily Dose of Inspiration
 
-![Certainty Logo](path/to/logo.png)
+![Certainty Logo](assets/certainty_banner.png)
 
 ## About Certainty
 
