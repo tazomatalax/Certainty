@@ -22,7 +22,7 @@ In our fast-paced world, it's easy to lose sight of what truly matters. Certaint
 
 ## How to Use
 
-1. **Download**: Grab the latest APK from the [Releases](link-to-releases) section.
+1. **Download**: Grab the latest APK from the [Releases](https://github.com/tazomatalax/certainty/releases) section.
 2. **Install**: Allow installation from unknown sources in your Android settings.
 3. **Open**: Launch the app and start exploring truths!
 4. **Customize**: Add your own truths, choose your favorite theme, and make Certainty your own.
