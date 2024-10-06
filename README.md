@@ -48,4 +48,7 @@ If you find Certainty helpful, feel free to share it with others who might benef
 
 ---
 
-Built with ❤️ using Flutter
+## License
+
+Certainty is open source software licensed under the MIT License.
+
