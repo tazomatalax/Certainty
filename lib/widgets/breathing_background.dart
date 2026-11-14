@@ -17,12 +17,12 @@ class BreathingBackground extends StatelessWidget {
               radius: 0.5 + 0.5 * animation.value,
               colors: [
                 // Darker color in the center
-                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
                 // Lighter color at the edges
                 HSLColor.fromColor(Theme.of(context).colorScheme.surface)
                     .withLightness(0.6 + 0.1 * animation.value)
                     .toColor()
-                    .withOpacity(0.99),
+                    .withValues(alpha: 0.99),
               ],
             ),
           ),

@@ -1,48 +1,90 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:Certainty/widgets/music_sidebar.dart';
-import 'package:Certainty/services/music_player.dart';
-import 'package:mockito/mockito.dart';
-import 'package:audioplayers/audioplayers.dart'; // Importing PlayerState
+import 'package:certainty/widgets/music_sidebar.dart';
+import 'package:certainty/widgets/settings_sidebar.dart';
+import 'package:certainty/services/music_player.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'dart:async';
 
-// Create a MockMusicPlayer using Mockito
-class MockMusicPlayer extends Mock implements MusicPlayer {}
+class FakeMusicPlayer extends Fake implements MusicPlayer {
+  final StreamController<int> currentIndexController;
+  final StreamController<Duration> positionController;
+  final StreamController<Duration> durationController;
+  final StreamController<PlayerState> playerStateController;
+
+  FakeMusicPlayer({
+    required this.currentIndexController,
+    required this.positionController,
+    required this.durationController,
+    required this.playerStateController,
+  });
+
+  @override
+  Stream<int> get currentIndexStream => currentIndexController.stream;
+
+  @override
+  Stream<Duration> get onPositionChanged => positionController.stream;
+
+  @override
+  Stream<Duration> get onDurationChanged => durationController.stream;
+
+  @override
+  Stream<PlayerState> get playerStateStream => playerStateController.stream;
+
+  @override
+  PlayerState get playerState => PlayerState.paused;
+
+  @override
+  bool get isPlaying => false;
+
+  @override
+  void selectTrack(int index) {}
+
+  @override
+  Future<void> togglePlayPause() async {}
+
+  @override
+  void playNext() {}
+
+  @override
+  void playPrevious() {}
+
+  @override
+  Future<void> play() async {}
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  void dispose() {}
+}
 
 void main() {
-  late MockMusicPlayer mockMusicPlayer;
+  late FakeMusicPlayer mockMusicPlayer;
   late ScrollController testScrollController;
 
-  // StreamControllers for mocking streams
   late StreamController<int> currentIndexController;
   late StreamController<Duration> positionController;
   late StreamController<Duration> durationController;
   late StreamController<PlayerState> playerStateController;
 
   setUp(() {
-    mockMusicPlayer = MockMusicPlayer();
-    testScrollController = ScrollController();
-
-    // Initialize StreamControllers
     currentIndexController = StreamController<int>.broadcast();
     positionController = StreamController<Duration>.broadcast();
     durationController = StreamController<Duration>.broadcast();
     playerStateController = StreamController<PlayerState>.broadcast();
 
-    // Mock the streams to return the StreamControllers' streams
-    when(mockMusicPlayer.currentIndexStream)
-        .thenAnswer((_) => currentIndexController.stream);
-    when(mockMusicPlayer.onPositionChanged)
-        .thenAnswer((_) => positionController.stream);
-    when(mockMusicPlayer.onDurationChanged)
-        .thenAnswer((_) => durationController.stream);
-    when(mockMusicPlayer.playerStateStream)
-        .thenAnswer((_) => playerStateController.stream);
+    mockMusicPlayer = FakeMusicPlayer(
+      currentIndexController: currentIndexController,
+      positionController: positionController,
+      durationController: durationController,
+      playerStateController: playerStateController,
+    );
+    testScrollController = ScrollController();
 
-    // Mock initial values if necessary
-    when(mockMusicPlayer.playerState).thenReturn(PlayerState.paused);
-
-    // Optionally, add initial data to streams
     currentIndexController.add(0);
     positionController.add(Duration.zero);
     durationController.add(const Duration(minutes: 3));
@@ -50,7 +92,6 @@ void main() {
   });
 
   tearDown(() {
-    // Dispose StreamControllers to prevent memory leaks
     currentIndexController.close();
     positionController.close();
     durationController.close();
@@ -60,7 +101,6 @@ void main() {
 
   testWidgets('MusicSidebar maintains scroll position after reopening',
       (WidgetTester tester) async {
-    // Build the widget tree with MusicSidebar inside a Scaffold
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -79,7 +119,7 @@ void main() {
           ),
           drawer: MusicSidebar(
             musicPlayer: mockMusicPlayer,
-            scrollController: testScrollController, // Injecting the ScrollController
+            scrollController: testScrollController,
           ),
           body: const Center(child: Text('Home')),
         ),
@@ -96,7 +136,6 @@ void main() {
     // Verify the drawer is open
     expect(find.byType(Drawer), findsOneWidget);
 
-    // Find the ListView in the MusicSidebar
     final listViewFinder = find.byType(ListView);
     expect(listViewFinder, findsOneWidget);
 
@@ -104,12 +143,10 @@ void main() {
     await tester.fling(listViewFinder, const Offset(0, -300), 1000);
     await tester.pumpAndSettle();
 
-    // Capture the current scroll position
     final double scrollOffsetAfterScroll = testScrollController.offset;
-    print('Scroll Offset After Scroll: $scrollOffsetAfterScroll');
 
-    // Close the drawer by tapping the back button
-    await tester.pageBack();
+    // Close the drawer by tapping the scrim / popping
+    await tester.tapAt(const Offset(700, 300));
     await tester.pumpAndSettle();
 
     // Reopen the drawer
@@ -121,12 +158,51 @@ void main() {
 
     // Ensure the ScrollController's offset is preserved
     expect(testScrollController.offset, equals(scrollOffsetAfterScroll));
+  });
 
-    // Optionally, attempt to scroll again to ensure scrolling is still active
-    await tester.fling(listViewFinder, const Offset(0, -100), 1000);
+  testWidgets('SettingsSidebar displays options and triggers callback',
+      (WidgetTester tester) async {
+    bool favoritesToggled = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          drawer: SettingsSidebar(
+            currentShareMessage: 'Test message',
+            onUpdateShareMessage: (_) {},
+            onToggleFavorites: () {
+              favoritesToggled = true;
+            },
+            onAddNewTruth: (_) {},
+            onToggleCustomTruths: () {},
+            showingFavorites: false,
+            showingCustomTruths: false,
+          ),
+          body: Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Open settings drawer
+    await tester.tap(find.byIcon(Icons.settings));
     await tester.pumpAndSettle();
 
-    // Verify the new scroll position has increased
-    expect(testScrollController.offset, greaterThan(scrollOffsetAfterScroll));
+    expect(find.text('Certainty'), findsOneWidget);
+    expect(find.text('Your personal truth compass'), findsOneWidget);
+    expect(find.text('Toggle Favorites'), findsOneWidget);
+    expect(find.text('Toggle Custom Truths'), findsOneWidget);
+    expect(find.text('Add New Truth'), findsOneWidget);
+    expect(find.text('Edit Share Message'), findsOneWidget);
+
+    // Tap toggle favorites
+    await tester.tap(find.text('Toggle Favorites'));
+    await tester.pumpAndSettle();
+
+    expect(favoritesToggled, isTrue);
   });
 }

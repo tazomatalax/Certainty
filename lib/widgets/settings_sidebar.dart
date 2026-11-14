@@ -21,7 +21,7 @@ class SettingsSidebar extends StatefulWidget {
   });
 
   @override
-  _SettingsSidebarState createState() => _SettingsSidebarState();
+  State<SettingsSidebar> createState() => _SettingsSidebarState();
 }
 
 class _SettingsSidebarState extends State<SettingsSidebar> {
@@ -56,7 +56,7 @@ class _SettingsSidebarState extends State<SettingsSidebar> {
                 Text(
                   'Your personal truth compass',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
                   ),
@@ -152,10 +152,6 @@ class _SettingsSidebarState extends State<SettingsSidebar> {
         );
       },
     ).then((_) => controller.dispose());
-  }
-
-  void _manageShareTemplates(BuildContext context) {
-    // Implement a dialog or screen to manage multiple share templates
   }
 
   @override

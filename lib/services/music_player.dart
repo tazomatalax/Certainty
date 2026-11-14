@@ -32,11 +32,6 @@ class MusicPlayer {
     await audioPlayer.stop();
   }
 
-  void _playNext() {
-    _currentIndex = (_currentIndex + 1) % _playlist.length;
-    play();
-  }
-
   void selectTrack(int index) {
     if (index >= 0 && index < _playlist.length) {
       _currentIndex = index;

@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:math';
 
 class DatabaseHelper {
@@ -20,7 +21,7 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'truths_database.db');
     return await openDatabase(
       path, 
-      version: 3,  // Increment this
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -83,7 +84,6 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getTruths() async {
     Database db = await database;
     List<Map<String, dynamic>> truths = await db.query('truths');
-    print("All truths from database: $truths");
     return truths;
   }
 
@@ -113,7 +113,6 @@ class DatabaseHelper {
     );
     List<String> categories = result.map((row) => row['category'] as String).toList();
     categories.sort(); // Sort the categories alphabetically
-    print("Categories from database: $categories"); // Add this line for debugging
     return categories;
   }
 
@@ -122,7 +121,7 @@ class DatabaseHelper {
     try {
       return await db.query('truths', where: 'category = ?', whereArgs: [category]);
     } catch (e) {
-      print("Error fetching truths by category: $e");
+      debugPrint("Error fetching truths by category: $e");
       return [];
     }
   }
@@ -137,7 +136,6 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getCustomTruths() async {
     Database db = await database;
     List<Map<String, dynamic>> customTruths = await db.query('truths', where: 'isCustom = ?', whereArgs: [1]);
-    print("Custom truths: $customTruths"); // Add this line
     return customTruths;
   }
 
@@ -159,30 +157,30 @@ class DatabaseHelper {
   Future<void> printAllTruths() async {
     Database db = await database;
     List<Map<String, dynamic>> allTruths = await db.query('truths');
-    print("Total truths in database: ${allTruths.length}");
+    debugPrint("Total truths in database: ${allTruths.length}");
     for (var truth in allTruths) {
-      print("ID: ${truth['id']}, Text: ${truth['text'].substring(0, min(20, (truth['text'] as String).length))}..., Category: ${truth['category']}");
+      debugPrint("ID: ${truth['id']}, Text: ${truth['text'].substring(0, min(20, (truth['text'] as String).length))}..., Category: ${truth['category']}");
     }
   }
 
   Future<void> forceUpgrade() async {
     Database db = await database;
     int version = await db.getVersion();
-    print("Current database version: $version");
-    if (version < 3) {
-      print("Upgrading database from version $version to 3");
-      await _onUpgrade(db, version, 3);
-      await db.setVersion(3);
-      print("Database upgraded to version 3");
+    debugPrint("Current database version: $version");
+    if (version < 4) {
+      debugPrint("Upgrading database from version $version to 4");
+      await _onUpgrade(db, version, 4);
+      await db.setVersion(4);
+      debugPrint("Database upgraded to version 4");
     } else {
-      print("Database is already at version 3");
+      debugPrint("Database is already at version 4");
     }
   }
 
   Future<void> deleteDatabase() async {
     String path = join(await getDatabasesPath(), 'truths_database.db');
     await databaseFactory.deleteDatabase(path);
-    print("Database deleted");
+    debugPrint("Database deleted");
   }
 }
 

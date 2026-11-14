@@ -36,47 +36,44 @@ class MusicSidebarState extends State<MusicSidebar> {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Container(
-        color: Theme.of(context).colorScheme.surface,
-        child: Column(
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              child: Center(
-                child: Text(
-                  'Music Player',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 24,
-                  ),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            child: Center(
+              child: Text(
+                'Music Player',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 24,
                 ),
               ),
             ),
-            Expanded(
-              child: ListView(
-                controller: _scrollController, // Assigning the ScrollController
-                children: [
-                  ListTile(
-                    title: const Text('Ocean Waves'),
-                    onTap: () => widget.musicPlayer.selectTrack(0),
-                  ),
-                  ListTile(
-                    title: const Text('Charmed Meditation'),
-                    onTap: () => widget.musicPlayer.selectTrack(1),
-                  ),
-                  ListTile(
-                    title: const Text('Moonlight Meditation'),
-                    onTap: () => widget.musicPlayer.selectTrack(2),
-                  ),
-                  // Add more ListTiles if needed
-                ],
-              ),
+          ),
+          Expanded(
+            child: ListView(
+              controller: _scrollController, // Assigning the ScrollController
+              children: [
+                ListTile(
+                  title: const Text('Ocean Waves'),
+                  onTap: () => widget.musicPlayer.selectTrack(0),
+                ),
+                ListTile(
+                  title: const Text('Charmed Meditation'),
+                  onTap: () => widget.musicPlayer.selectTrack(1),
+                ),
+                ListTile(
+                  title: const Text('Moonlight Meditation'),
+                  onTap: () => widget.musicPlayer.selectTrack(2),
+                ),
+              ],
             ),
-            _buildMusicControls(),
-          ],
-        ),
+          ),
+          _buildMusicControls(),
+        ],
       ),
     );
   }
@@ -150,15 +147,5 @@ class MusicSidebarState extends State<MusicSidebar> {
         ],
       ),
     );
-  }
-
-  void _playTrack(int index) {
-    widget.musicPlayer.selectTrack(index);
-    setState(() {});
-  }
-
-  void _togglePlayPause() {
-    widget.musicPlayer.togglePlayPause();
-    setState(() {});
   }
 }
